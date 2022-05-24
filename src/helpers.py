@@ -60,9 +60,9 @@ def create_record_line(fields):
 def create_new_record_file(type_name, fields):
     new_type_file = open(f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}", "w")
     # write initial file header: 0(is_full flag) 1(first empty page)
-    new_type_file.write("0 1  \n")
+    new_type_file.write("0 1" + ((constants.FILE_HEADER_LENGTH - 4) * " ") + "\n")
     # write initial page header: 0(is_full flag) 1(first empty line)
-    new_type_file.write("0 2 \n")
+    new_type_file.write("0 2" + ((constants.PAGE_HEADER_LENGTH - 4) * " ") + "\n")
     # write record
     new_type_file.write(create_record_line(fields))
     new_type_file.close()
@@ -92,7 +92,6 @@ def update_page_header(file, page_header_offset):
     new_first_empty_line = 1
     while True:
         record_line = file_read(file, record_line_offset + constants.MAX_RECORD_SIZE, record_line_offset)
-        print(record_line)
         if not record_line or record_line[0] == "0":
             new_first_empty_line = index
             break
@@ -113,7 +112,6 @@ def update_file_header(file, page_header_offset):
     index = 1
     while True:
         page_header_line = file_read(file, page_header_offset + constants.MAX_RECORD_SIZE, page_header_offset)
-        print(page_header_line)
         if not page_header_line:
             new_first_empty_page = index
             if new_first_empty_page <= constants.PAGE_PER_FILE:

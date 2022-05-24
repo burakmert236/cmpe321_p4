@@ -93,7 +93,7 @@ def filter_records(type_name, condititon):
     print(type_name, condititon)
 
 
-def record_operations(operation, args):
+def record_operations(operation, args, output_file):
     if operation == "create":
         type_name = args[2]
         fields = args[3:]
@@ -110,11 +110,11 @@ def record_operations(operation, args):
     elif operation == "search":
         type_name = args[2]
         pk = args[3]
-        search_record(type_name, pk)
+        search_record(type_name, pk, output_file)
     elif operation == "list":
         type_name = args[2]
-        list_records(type_name)
+        list_records(type_name, output_file)
     elif operation == "filter":
         type_name = args[2]
         condition = args[3]
-        filter_records(type_name, condition)
+        filter_records(type_name, condition, output_file)
