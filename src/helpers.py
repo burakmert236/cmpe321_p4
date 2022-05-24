@@ -33,9 +33,9 @@ def get_record(index):
     file_name, page_number, page_offset = line.split(".")
 
     # is_full flag(0/1) + space + page_number_length + \n
-    file_header_size = 1 + 1 + len(str(constants.PAGE_PER_FILE)) + 1
+    file_header_size = constants.FILE_HEADER_LENGTH
     # is_full flag(0/1) + space + offset_length + \n
-    page_header_size = page_number * (1 + 1 + len(str(constants.RECORD_PER_PAGE)) + 1)
+    page_header_size = constants.PAGE_HEADER_LENGTH
     offset_record_size = (
         ((page_number - 1) * constants.RECORD_PER_PAGE * constants.MAX_RECORD_SIZE) + 
         ((page_offset - 1) * constants.MAX_RECORD_SIZE)
@@ -58,7 +58,7 @@ def create_record_line(fields):
 
 
 def create_new_record_file(type_name, fields):
-    new_type_file = open(f"{type_name}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}", "w")
+    new_type_file = open(f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}", "w")
     # write initial file header: 0(is_full flag) 1(first empty page)
     new_type_file.write("0 1  \n")
     # write initial page header: 0(is_full flag) 1(first empty line)
@@ -71,24 +71,23 @@ def create_new_record_file(type_name, fields):
     return index
 
 def calculate_offset(page_number, line_number):
-    file_header = 6
-    page_headers = page_number * 5
+    page_headers = page_number * constants.PAGE_HEADER_LENGTH
     record_lines_in_prev_pages = (page_number - 1) * constants.RECORD_PER_PAGE * constants.MAX_RECORD_SIZE
     record_lines_in_current_page = (line_number - 1) * constants.MAX_RECORD_SIZE
     
-    return file_header + page_headers + record_lines_in_prev_pages + record_lines_in_current_page
+    return constants.FILE_HEADER_LENGTH + \
+            page_headers + record_lines_in_prev_pages + record_lines_in_current_page
 
 
 def calculate_page_header_offset(page_number):
-    file_header = 6
-    page_headers = (page_number - 1) * 5
+    page_headers = (page_number - 1) * constants.PAGE_HEADER_LENGTH
     record_lines_in_prev_pages = (page_number - 1) * constants.RECORD_PER_PAGE * constants.MAX_RECORD_SIZE
 
-    return file_header + page_headers + record_lines_in_prev_pages
+    return constants.FILE_HEADER_LENGTH + page_headers + record_lines_in_prev_pages
 
 
 def update_page_header(file, page_header_offset):
-    record_line_offset = page_header_offset + 5
+    record_line_offset = page_header_offset + constants.PAGE_HEADER_LENGTH
     index = 1
     new_first_empty_line = 1
     while True:
@@ -101,7 +100,7 @@ def update_page_header(file, page_header_offset):
         index = index + 1
         record_line_offset = record_line_offset + constants.MAX_RECORD_SIZE
 
-    new_first_empty_line_line = str(new_first_empty_line) + ((2 - len(str(new_first_empty_line))) * " ")
+    new_first_empty_line_line = str(new_first_empty_line) + ((1 - len(str(new_first_empty_line))) * " ")
     is_page_full = new_first_empty_line > constants.RECORD_PER_PAGE
     new_page_header = f"{int(is_page_full)} {new_first_empty_line_line}"
     file_write(file, page_header_offset, new_page_header)
@@ -109,7 +108,7 @@ def update_page_header(file, page_header_offset):
     return is_page_full
 
 def update_file_header(file, page_header_offset):
-    page_header_offset = 6
+    page_header_offset = constants.FILE_HEADER_LENGTH
     new_first_empty_page = 1
     index = 1
     while True:
@@ -118,16 +117,16 @@ def update_file_header(file, page_header_offset):
         if not page_header_line:
             new_first_empty_page = index
             if new_first_empty_page <= constants.PAGE_PER_FILE:
-                file_append(file, "0 1 \n")
+                file_append(file, "0 1" + ((constants.PAGE_HEADER_LENGTH-4) * " ") + "\n")
             break
         if page_header_line[0] == "0":
             new_first_empty_page = index
             break
 
         index = index + 1
-        page_header_offset = page_header_offset + (constants.MAX_RECORD_SIZE * constants.RECORD_PER_PAGE) + 6
+        page_header_offset = page_header_offset + (constants.MAX_RECORD_SIZE * constants.RECORD_PER_PAGE) + constants.PAGE_HEADER_LENGTH
 
-    new_first_empty_page_line = str(new_first_empty_page) + ((3 - len(str(new_first_empty_page))) * " ")
+    new_first_empty_page_line = str(new_first_empty_page) + ((1 - len(str(new_first_empty_page))) * " ")
     is_file_full = new_first_empty_page > constants.PAGE_PER_FILE
     new_file_header = f"{int(is_file_full)} {new_first_empty_page_line}"
     file_write(file, 0, new_file_header)
@@ -143,5 +142,5 @@ def udpate_headers(file, first_empty_line, page_header_offset):
     else:
         is_page_full = update_page_header(file, page_header_offset)
         if is_page_full:
-            udpate_file_header()
+            update_file_header(file, page_header_offset)
 
