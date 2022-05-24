@@ -1,7 +1,6 @@
 import sys
 from type_functions import type_operations
 from record_functions import record_operations
-from file_functions import file_read
 
 def read_files(input_file):
     f = open(input_file, "r")
@@ -19,5 +18,4 @@ def main(files):
     #write_files(files[1])
 
 if __name__ == '__main__':
-    #main(sys.argv[1:])
-    file_read('inputFile', 100, 30)
+    main(sys.argv[1:])
