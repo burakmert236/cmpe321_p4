@@ -7,12 +7,12 @@ def create_type(type_name, field_number, pk_order, fields):
 def delete_type(type_name):
     # delete b+ tree index file
     # if there is no b+ for the type, write failure into csv
-    bplus_file = "BPTree_" + type_name
-    bp_files = [f for f in os.listdir('.') if os.path.isfile(f) and bplus_file in f]
-    if not bp_files:
-        # FAILURE
-        return
-    os.remove(bp_files[0])
+    # bplus_file = "BPTree_" + type_name
+    # bp_files = [f for f in os.listdir('.') if os.path.isfile(f) and bplus_file in f]
+    # if not bp_files:
+    #     # FAILURE
+    #     pass
+    # os.remove(bp_files[0])
 
     record_file_name = type_name + "_records_"
     record_files = [f for f in os.listdir('.') if os.path.isfile(f) and record_file_name in f]

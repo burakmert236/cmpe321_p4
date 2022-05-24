@@ -81,15 +81,24 @@ def delete_record(type_name, pk):
         file_write(file, 0, new_file_header)
 
 def update_record(type_name, pk, fields):
-    print(type_name, pk, fields)
 
-def search_record(type_name, pk):
+    # check given fields
+    
+    ## get record index from b+ tree
+    record_index = "angel_records_20220524172140747.2.4"
+    file, page, line = record_index.split(".")
+
+    updated_line = create_record_line([pk] + fields)
+    record_offset = calculate_offset(int(page), int(line))
+    record_line = file_write(file, record_offset, updated_line)
+
+def search_record(type_name, pk, output_file):
     print(type_name, pk)
 
-def list_records(type_name):
+def list_records(type_name, output_file):
     print(type_name)
 
-def filter_records(type_name, condititon):
+def filter_records(type_name, condititon, output_file):
     print(type_name, condititon)
 
 
