@@ -1,4 +1,5 @@
 import constants, datetime
+from BPTree import BPlusTree
 
 def file_read(filename, end_index, start_index=0):
     with open(filename) as fin:
@@ -67,7 +68,7 @@ def create_new_record_file(type_name, fields):
     new_type_file.write(create_record_line(fields))
     new_type_file.close()
     # get record index
-    index = f"{type_name}.1.1"
+    index = f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}.1.1"
     return index
 
 def calculate_offset(page_number, line_number):
@@ -142,3 +143,33 @@ def udpate_headers(file, first_empty_line, page_header_offset):
         if is_page_full:
             update_file_header(file, page_header_offset)
 
+
+def bptree_from_file(file):
+
+    exists = False
+    pk_order = 0
+    with open(file) as f:
+        for index, line in enumerate(f):
+            if index < 3: 
+                if index == 0:
+                    pk_order = int(line[:-1])
+                continue
+            exists = True
+
+    if not exists:
+        bp_tree = BPlusTree(4)
+        return pk_order, bp_tree
+
+
+def clear_bpfile(file):
+
+    result = ""
+    with open(file, "r+") as f:
+        for index, line in enumerate(f):
+            if index < 3:
+                result = result + line
+            else: break
+        
+    open(file, "w").close()
+    with open(file, "w") as f:
+        f.write(result)

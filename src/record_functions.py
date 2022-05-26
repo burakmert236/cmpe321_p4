@@ -4,11 +4,16 @@ from helpers import (
     create_record_line, 
     file_read, 
     file_write, 
+    file_append,
     calculate_offset, 
     calculate_page_header_offset, 
     create_new_record_file,
     udpate_headers,
+    bptree_from_file
 )
+
+BP_TREES = {}
+PK_ORDERS = {}
 
 def create_record(type_name, fields):
     # check whether a record file exist
@@ -16,6 +21,10 @@ def create_record(type_name, fields):
     # if all of them are full or no file exists, create new one
     # write into right spot and update page, file headers
     # find right spot in corresponding b+ tree and save record_index
+
+    bp_file = f"BPTree_{type_name}"
+    if type_name not in list(BP_TREES): 
+        PK_ORDERS[type_name], BP_TREES[type_name] = bptree_from_file(bp_file)
 
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     type_files = []
@@ -47,13 +56,18 @@ def create_record(type_name, fields):
     else:
         record_index = create_new_record_file(type_name, fields)
 
-
-    ## save record index into b+ tree
+    print(fields[PK_ORDERS[type_name]-1], record_index)
+    BP_TREES[type_name].__setitem__(fields[PK_ORDERS[type_name]-1], record_index)
 
 def delete_record(type_name, pk):
 
+    bp_file = f"BPTree_{type_name}"
+    pk_order = 0
+    if type_name not in list(BP_TREES): 
+        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+
     ## get record index from b+ tree
-    record_index = "angel_20220524141303610.1.4"
+    record_index = BP_TREES[type_name].__getitem__(pk)
     file, page, line = record_index.split(".")
 
     # update record file
@@ -80,12 +94,19 @@ def delete_record(type_name, pk):
         new_file_header = f"0 {new_first_empty_page}"
         file_write(file, 0, new_file_header)
 
+    # delete from b+ tree
+    BP_TREES[type_name].delete(pk)
+
 def update_record(type_name, pk, fields):
 
     # check given fields
+    bp_file = f"BPTree_{type_name}"
+    pk_order = 0
+    if type_name not in list(BP_TREES): 
+        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
     
     ## get record index from b+ tree
-    record_index = "angel_records_20220524172140747.2.4"
+    record_index = BP_TREES[type_name].__getitem__(pk)
     file, page, line = record_index.split(".")
 
     updated_line = create_record_line([pk] + fields)
@@ -93,10 +114,32 @@ def update_record(type_name, pk, fields):
     record_line = file_write(file, record_offset, updated_line)
 
 def search_record(type_name, pk, output_file):
-    print(type_name, pk)
+
+    bp_file = f"BPTree_{type_name}"
+    pk_order = 0
+    if type_name not in list(BP_TREES): 
+        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+    
+    ## get record index from b+ tree
+    record_index = BP_TREES[type_name].__getitem__(pk)
+    file, page, line = record_index.split(".")
+
+    record_offset = calculate_offset(int(page), int(line))
+    record_line = file_read(file, record_offset + constants.MAX_RECORD_SIZE, record_offset)
+    record_line = " ".join([field for field in (record_line[1:-1]).split(" ") if field != ""])
+    
+    file_append(output_file, record_line+"\n")
+
 
 def list_records(type_name, output_file):
-    print(type_name)
+    record_file_name = type_name + "_records_"
+    record_files = [f for f in os.listdir('.') if os.path.isfile(f) and record_file_name in f]
+    for f in record_files:
+        with open(f) as file:
+            for line in file:
+                if(len(line) == constants.MAX_RECORD_SIZE):
+                    line = " ".join([field for field in (line[1:-1]).split(" ") if field != ""])
+                    file_append(output_file, line+"\n")
 
 def filter_records(type_name, condititon, output_file):
     print(type_name, condititon)
