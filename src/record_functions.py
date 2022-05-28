@@ -56,7 +56,6 @@ def create_record(type_name, fields):
     else:
         record_index = create_new_record_file(type_name, fields)
 
-    print(fields[PK_ORDERS[type_name]-1], record_index)
     BP_TREES[type_name].__setitem__(fields[PK_ORDERS[type_name]-1], record_index)
 
 def delete_record(type_name, pk):
@@ -109,7 +108,7 @@ def update_record(type_name, pk, fields):
     record_index = BP_TREES[type_name].__getitem__(pk)
     file, page, line = record_index.split(".")
 
-    updated_line = create_record_line([pk] + fields)
+    updated_line = create_record_line(fields)
     record_offset = calculate_offset(int(page), int(line))
     record_line = file_write(file, record_offset, updated_line)
 
@@ -128,18 +127,40 @@ def search_record(type_name, pk, output_file):
     record_line = file_read(file, record_offset + constants.MAX_RECORD_SIZE, record_offset)
     record_line = " ".join([field for field in (record_line[1:-1]).split(" ") if field != ""])
     
-    file_append(output_file, record_line+"\n")
+    if output_file: file_append(output_file, record_line+"\n")
+
+    return record_line + "\n"
 
 
 def list_records(type_name, output_file):
-    record_file_name = type_name + "_records_"
-    record_files = [f for f in os.listdir('.') if os.path.isfile(f) and record_file_name in f]
-    for f in record_files:
-        with open(f) as file:
-            for line in file:
-                if(len(line) == constants.MAX_RECORD_SIZE):
-                    line = " ".join([field for field in (line[1:-1]).split(" ") if field != ""])
-                    file_append(output_file, line+"\n")
+
+    bp_file = f"BPTree_{type_name}"
+    pk_order = 0
+    if type_name not in list(BP_TREES): 
+        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+
+    first_leaf = BP_TREES[type_name].root
+    while True:
+        if not first_leaf.values: break
+        if isinstance(first_leaf.values[0], str): break
+        first_leaf = first_leaf.values[0]
+
+    indexes = []
+    leaf = first_leaf
+    while True:
+        if leaf.values: indexes.extend(leaf.values)
+        if not leaf.next: break
+        leaf = leaf.next
+
+    for index in indexes:
+        file, page, line = index.split(".")
+
+        record_offset = calculate_offset(int(page), int(line))
+        record_line = file_read(file, record_offset + constants.MAX_RECORD_SIZE, record_offset)
+        record_line = " ".join([field for field in (record_line[1:-1]).split(" ") if field != ""])
+        
+        if output_file: file_append(output_file, record_line+"\n")
+
 
 def filter_records(type_name, condititon, output_file):
     print(type_name, condititon)

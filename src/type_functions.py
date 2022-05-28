@@ -29,6 +29,7 @@ def delete_type(type_name):
 
 def list_types(output_file):
     files = [(f.split("BPTree_"))[1] for f in os.listdir('.') if os.path.isfile(f) and "BPTree_" in f]
+    files.sort()
     with open(output_file, "a") as f:
         for type in files:
             f.write(type + "\n")

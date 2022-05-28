@@ -1,5 +1,5 @@
 import constants, datetime
-from BPTree import BPlusTree
+from BPTree import BPlusTree, Node, Leaf
 
 def file_read(filename, end_index, start_index=0):
     with open(filename) as fin:
@@ -59,7 +59,8 @@ def create_record_line(fields):
 
 
 def create_new_record_file(type_name, fields):
-    new_type_file = open(f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}", "w")
+    new_type_file_name = f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}"
+    new_type_file = open(new_type_file_name, "w")
     # write initial file header: 0(is_full flag) 1(first empty page)
     new_type_file.write("0 1" + ((constants.FILE_HEADER_LENGTH - 4) * " ") + "\n")
     # write initial page header: 0(is_full flag) 1(first empty line)
@@ -68,7 +69,7 @@ def create_new_record_file(type_name, fields):
     new_type_file.write(create_record_line(fields))
     new_type_file.close()
     # get record index
-    index = f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}.1.1"
+    index = f"{new_type_file_name}.1.1"
     return index
 
 def calculate_offset(page_number, line_number):
@@ -147,7 +148,10 @@ def udpate_headers(file, first_empty_line, page_header_offset):
 def bptree_from_file(file):
 
     exists = False
+    bp_tree = None
     pk_order = 0
+    nodes = {}
+    leaf_depth = "0"
     with open(file) as f:
         for index, line in enumerate(f):
             if index < 3: 
@@ -156,9 +160,56 @@ def bptree_from_file(file):
                 continue
             exists = True
 
-    if not exists:
+            leading_spaces = len(line) - len(line.lstrip(" "))
+            line = line.strip()
+
+            if "_records_" in line:
+                leaf_depth = leading_spaces
+                keys, values = line.split(" ")
+                key_list = keys.split(",")
+                value_list = values.split(",")
+
+                node = Leaf()
+                node.keys = key_list
+                node.values = value_list
+
+            else:
+                indexes = line.split(",")
+                node = Node()
+                node.keys = indexes
+
+            if str(leading_spaces) in list(nodes):
+                nodes[str(leading_spaces)].append(node)
+            else:
+                nodes[str(leading_spaces)] = [node]
+
+            if leading_spaces == 0: 
+                bp_tree = BPlusTree(4)
+                bp_tree.root = node
+        
+
+    if exists:
+        for index, key in enumerate(list(nodes)):
+            if index == leaf_depth: break
+            level_nodes = nodes[key]
+            next_level_nodes = list(nodes[str(index+1)])
+
+            for level_node in level_nodes:
+                portion = len(level_node.keys) + 1
+                for children in next_level_nodes[:portion]:
+                    children.parent = level_node
+                level_node.values = next_level_nodes[:portion]
+                next_level_nodes = next_level_nodes[portion:]
+
+        for index, node in enumerate(nodes[str(leaf_depth)]):
+            if index == len(nodes[str(leaf_depth)]) - 1: break
+            next_node = nodes[str(leaf_depth)][index+1]
+            node.next = next_node
+            next_node.prev = node
+    else:
         bp_tree = BPlusTree(4)
-        return pk_order, bp_tree
+
+    return pk_order, bp_tree
 
 
 def clear_bpfile(file):

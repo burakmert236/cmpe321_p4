@@ -312,18 +312,18 @@ class BPlusTree(object):
         #
         #     node.keys[i - 1] = self.keys[0]
 
-    def show(self, node=None, file=None, _prefix="", _last=True, index = 0):
+    def show(self, node=None, file=None, _prefix="", _last=True):
         """Prints the keys at each level."""
         if node is None:
             node = self.root
-        print(" " * index, node.keys, node.values, sep="", file=file)
+        print(_prefix, "`- " if _last else "|- ", node.keys, sep="", file=file)
         _prefix += "   " if _last else "|  "
 
         if type(node) is Node:
             # Recursively print the key of child nodes (if these exist).
             for i, child in enumerate(node.values):
                 _last = (i == len(node.values) - 1)
-                self.show(child, file, _prefix, _last, index = index + 1)
+                self.show(child, file, _prefix, _last)
 
     def print_to_file(self, file, index = 0, node = None):
         """Prints the keys at each level."""
@@ -335,7 +335,7 @@ class BPlusTree(object):
             values = ""
         result = " " * index + ",".join(node.keys) + " " + ",".join(values) + "\n"
         with open(file, "a") as fin:
-        	fin.write(result)
+        	if not result == " \n": fin.write(result)
 
         if type(node) is Node:
             # Recursively print the key of child nodes (if these exist).
