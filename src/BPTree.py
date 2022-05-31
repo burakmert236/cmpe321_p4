@@ -333,7 +333,7 @@ class BPlusTree(object):
         values = node.values
         if not any(isinstance(x, str) for x in values):
             values = ""
-        result = " " * index + ",".join(node.keys) + " " + ",".join(values) + "\n"
+        result = " " * index + ",".join(map(str, node.keys)) + " " + ",".join(values) + "\n"
         with open(file, "a") as fin:
         	if not result == " \n": fin.write(result)
 

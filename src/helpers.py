@@ -51,7 +51,7 @@ def create_record_line(fields):
     result = "1"
     for i in range(constants.MAX_NUMBER_OF_FIELDS):
         if i < len(fields):
-            result = result + fields[i] + ((constants.FIELD_NAME_MAX_LENGTH - len(fields[i])) * " ")
+            result = result + str(fields[i]) + ((constants.FIELD_NAME_MAX_LENGTH - len(str(fields[i]))) * " ")
         else:
             result = result + (constants.FIELD_NAME_MAX_LENGTH * " ")
     result = result + "\n"
@@ -112,7 +112,7 @@ def update_page_header(file, page_header_offset):
 
 def update_file_header(file, page_header_offset):
 
-    page_header_offset = constants.FILE_HEADER_LENGTH
+    page_header_offset = constants.FILE_HEADER_LENGTH + constants.RECORD_PER_FILE_LENGTH
     new_first_empty_page = 1
     index = 1
     while True:
@@ -161,6 +161,7 @@ def bptree_from_file(file):
     exists = False
     bp_tree = None
     pk_order = 0
+    info = {}
     nodes = {}
     leaf_depth = "0"
     with open(file) as f:
@@ -168,6 +169,8 @@ def bptree_from_file(file):
             if index < 3: 
                 if index == 0:
                     pk_order = int(line[:-1])
+                if index == 1:
+                    info = [x.split(":")[1] for x in line[:-1].split(",")]
                 continue
             exists = True
 
@@ -220,7 +223,7 @@ def bptree_from_file(file):
     else:
         bp_tree = BPlusTree(4)
 
-    return pk_order, bp_tree
+    return pk_order, bp_tree, info
 
 
 def clear_bpfile(file):

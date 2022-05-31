@@ -14,6 +14,7 @@ from helpers import (
 
 BP_TREES = {}
 PK_ORDERS = {}
+TYPE_INFOS = {}
 
 def create_record(type_name, fields):
     # check whether a record file exist
@@ -24,7 +25,14 @@ def create_record(type_name, fields):
 
     bp_file = f"BPTree_{type_name}"
     if type_name not in list(BP_TREES): 
-        PK_ORDERS[type_name], BP_TREES[type_name] = bptree_from_file(bp_file)
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
+
+    for index, field in enumerate(fields):
+        if TYPE_INFOS[type_name][index] == "str":
+            fields[index] = str(fields[index])
+        if TYPE_INFOS[type_name][index] == "int":
+            fields[index] = int(fields[index])
+
 
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     type_files = []
@@ -38,7 +46,6 @@ def create_record(type_name, fields):
         found = False
         for file in type_files:
             file_header = file_read(file, constants.FILE_HEADER_LENGTH + constants.RECORD_PER_FILE_LENGTH, constants.RECORD_PER_FILE_LENGTH)
-            print(constants.FILE_HEADER_LENGTH + constants.RECORD_PER_FILE_LENGTH, constants.RECORD_PER_FILE_LENGTH)
             if file_header[0] == "0":
                 first_empty_page = int(file_header[2:constants.PAGE_HEADER_LENGTH])
                 page_header_offset = calculate_page_header_offset(first_empty_page)
@@ -62,9 +69,8 @@ def create_record(type_name, fields):
 def delete_record(type_name, pk):
 
     bp_file = f"BPTree_{type_name}"
-    pk_order = 0
     if type_name not in list(BP_TREES): 
-        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
 
     ## get record index from b+ tree
     record_index = BP_TREES[type_name].__getitem__(pk)
@@ -116,9 +122,8 @@ def update_record(type_name, pk, fields):
 
     # check given fields
     bp_file = f"BPTree_{type_name}"
-    pk_order = 0
     if type_name not in list(BP_TREES): 
-        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
     
     ## get record index from b+ tree
     record_index = BP_TREES[type_name].__getitem__(pk)
@@ -128,12 +133,11 @@ def update_record(type_name, pk, fields):
     record_offset = calculate_offset(int(page), int(line))
     record_line = file_write(file, record_offset, updated_line)
 
-def search_record(type_name, pk, output_file):
+def search_record(type_name, pk, output_file=None):
 
     bp_file = f"BPTree_{type_name}"
-    pk_order = 0
     if type_name not in list(BP_TREES): 
-        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
     
     ## get record index from b+ tree
     record_index = BP_TREES[type_name].__getitem__(pk)
@@ -151,9 +155,8 @@ def search_record(type_name, pk, output_file):
 def list_records(type_name, output_file):
 
     bp_file = f"BPTree_{type_name}"
-    pk_order = 0
     if type_name not in list(BP_TREES): 
-        pk_order, BP_TREES[type_name] = bptree_from_file(bp_file)
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
 
     first_leaf = BP_TREES[type_name].root
     while True:
@@ -179,7 +182,68 @@ def list_records(type_name, output_file):
 
 
 def filter_records(type_name, condititon, output_file):
-    print(type_name, condititon)
+
+    bp_file = f"BPTree_{type_name}"
+    if type_name not in list(BP_TREES): 
+        PK_ORDERS[type_name], BP_TREES[type_name], TYPE_INFOS[type_name] = bptree_from_file(bp_file)
+
+    if "=" in condititon:
+        field, value = condititon.split("=")
+        record_line = search_record(type_name, value)
+        file_append(output_file, record_line)
+
+    if "<" in condititon:
+        field, value = condititon.split("<")
+        inserted_node = BP_TREES[type_name].find(value)
+        
+        indexes = []
+
+        for index, leaf_value in enumerate(inserted_node.keys):
+            if leaf_value < value: 
+                indexes.append(inserted_node.values[index])
+
+        indexes = indexes[::-1]
+    
+        while True:
+            if not inserted_node.prev: break
+            inserted_node = inserted_node.prev
+            indexes.extend(inserted_node.values[::-1])
+
+        indexes = indexes[::-1]
+
+        for index in indexes:
+
+            file, page, line = index.split(".")
+
+            record_offset = calculate_offset(int(page), int(line))
+            record_line = file_read(file, record_offset + constants.MAX_RECORD_SIZE, record_offset)
+            record_line = " ".join([field for field in (record_line[1:-1]).split(" ") if field != ""])
+            file_append(output_file, record_line + "\n")
+
+    if ">" in condititon:
+        
+        field, value = condititon.split(">")
+        inserted_node = BP_TREES[type_name].find(value)
+        
+        indexes = []
+
+        for index, leaf_value in enumerate(inserted_node.keys):
+            if leaf_value > value: 
+                indexes.append(inserted_node.values[index])
+    
+        while True:
+            if not inserted_node.next: break
+            inserted_node = inserted_node.next
+            indexes.extend(inserted_node.values)
+
+        for index in indexes:
+
+            file, page, line = index.split(".")
+
+            record_offset = calculate_offset(int(page), int(line))
+            record_line = file_read(file, record_offset + constants.MAX_RECORD_SIZE, record_offset)
+            record_line = " ".join([field for field in (record_line[1:-1]).split(" ") if field != ""])
+            file_append(output_file, record_line + "\n")
 
 
 def record_operations(operation, args, output_file):
