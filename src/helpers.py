@@ -164,6 +164,7 @@ def bptree_from_file(file):
     info = {}
     nodes = {}
     leaf_depth = "0"
+    pk_type = ""
     with open(file) as f:
         for index, line in enumerate(f):
             if index < 3: 
@@ -171,6 +172,7 @@ def bptree_from_file(file):
                     pk_order = int(line[:-1])
                 if index == 1:
                     info = [x.split(":")[1] for x in line[:-1].split(",")]
+                    pk_type = "int" if info[pk_order-1] == "int" else "str "if info[pk_order-1] == "str" else ""
                 continue
             exists = True
 
@@ -181,6 +183,10 @@ def bptree_from_file(file):
                 leaf_depth = leading_spaces
                 keys, values = line.split(" ")
                 key_list = keys.split(",")
+                if pk_type == "int":
+                    key_list = [int(key) for key in key_list]
+                if pk_type == "str":
+                    key_list = [str(key) for key in key_list]
                 value_list = values.split(",")
 
                 node = Leaf()
@@ -189,6 +195,10 @@ def bptree_from_file(file):
 
             else:
                 indexes = line.split(",")
+                if pk_type == "int":
+                    indexes = [int(index) for index in indexes]
+                if pk_type == "str":
+                    indexes = [str(index) for index in indexes]
                 node = Node()
                 node.keys = indexes
 
