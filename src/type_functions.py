@@ -12,9 +12,9 @@ def create_type(type_name, field_number, pk_order, fields):
 
     try:
         open(bp_file, 'a').close()
-        file_write(bp_file, 0, f"{pk_order}\n")
-        fields_line = ",".join([f"{key}:{fields[key]}" for key in fields])
-        file_append(bp_file, f"{fields_line}\n")
+        file_write(bp_file, 0, str(pk_order) + "\n")
+        fields_line = ",".join([str(key) + ":" + str(fields[key]) for key in fields])
+        file_append(bp_file, str(fields_line) + "\n")
         file_append(bp_file, "0\n")
     except:
         return False

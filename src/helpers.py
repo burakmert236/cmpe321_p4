@@ -59,7 +59,7 @@ def create_record_line(fields):
 
 
 def create_new_record_file(type_name, fields):
-    new_type_file_name = f"{type_name}_records_{datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3]}"
+    new_type_file_name = str(type_name) + "_records_" + str(datetime.datetime.now().strftime('%Y%m%d%H%M%S%f')[:-3])
     new_type_file = open(new_type_file_name, "w")
     # write initial number of reecords
     new_type_file.write("1" + ((constants.RECORD_PER_FILE_LENGTH - 2) * " ") + "\n")
@@ -71,7 +71,7 @@ def create_new_record_file(type_name, fields):
     new_type_file.write(create_record_line(fields))
     new_type_file.close()
     # get record index
-    index = f"{new_type_file_name}.1.1"
+    index = str(new_type_file_name) + ".1.1"
     return index
 
 def calculate_offset(page_number, line_number):
@@ -105,7 +105,7 @@ def update_page_header(file, page_header_offset):
 
     new_first_empty_line_line = str(new_first_empty_line) + ((1 - len(str(new_first_empty_line))) * " ")
     is_page_full = new_first_empty_line > constants.RECORD_PER_PAGE
-    new_page_header = f"{int(is_page_full)} {new_first_empty_line_line}"
+    new_page_header = str(int(is_page_full)) + " " +  str(new_first_empty_line_line)
     file_write(file, page_header_offset, new_page_header)
 
     return is_page_full
@@ -131,7 +131,7 @@ def update_file_header(file, page_header_offset):
 
     new_first_empty_page_line = str(new_first_empty_page) + ((1 - len(str(new_first_empty_page))) * " ")
     is_file_full = new_first_empty_page > constants.PAGE_PER_FILE
-    new_file_header = f"{int(is_file_full)} {new_first_empty_page_line}"
+    new_file_header = str(int(is_file_full)) + " " +  str(new_first_empty_page_line)
     file_write(file, constants.RECORD_PER_FILE_LENGTH, new_file_header)
 
     return is_file_full

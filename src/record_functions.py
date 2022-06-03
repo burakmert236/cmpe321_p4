@@ -23,7 +23,7 @@ def create_record(type_name, fields):
     # write into right spot and update page, file headers
     # find right spot in corresponding b+ tree and save record_index
 
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 
@@ -61,7 +61,7 @@ def create_record(type_name, fields):
                 first_empty_line = int(page_header[2:])
                 record_offset = calculate_offset(first_empty_page, first_empty_line)
                 file_write(file, record_offset, create_record_line(fields))
-                record_index = f"{file}.{first_empty_page}.{first_empty_line}"
+                record_index = str(file) + "." + str(first_empty_page) + "." + str(first_empty_line)
 
                 udpate_headers(file, first_empty_line, page_header_offset)
 
@@ -77,7 +77,7 @@ def create_record(type_name, fields):
 
 def delete_record(type_name, pk):
 
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 
@@ -98,7 +98,7 @@ def delete_record(type_name, pk):
         record_offset = calculate_offset(int(page), int(line))
         record_line = file_read(file, record_offset+constants.MAX_RECORD_SIZE, record_offset)
         if record_line[0] == "1":
-            record_line = f"0{record_line[1:]}"
+            record_line = "0" + str(record_line[1:])
             file_write(file, record_offset, record_line)
         
         # update page header
@@ -108,7 +108,7 @@ def delete_record(type_name, pk):
         new_page_header = ""
         if int(line) < old_first_empty_line:
             new_first_empty_line = str(line) + ((constants.PAGE_HEADER_LENGTH - 3 - len(str(line))) * " ")
-            new_page_header = f"0 {new_first_empty_line}"
+            new_page_header = "0 " + str(new_first_empty_line)
             file_write(file, page_header_offset, new_page_header)
         
         # update file header
@@ -117,7 +117,7 @@ def delete_record(type_name, pk):
         new_file_header = ""
         if int(page) < old_first_empty_page:
             new_first_empty_page = str(page) + ((constants.FILE_HEADER_LENGTH - 3 - len(str(line))) * " ")
-            new_file_header = f"0 {new_first_empty_page}"
+            new_file_header = "0 " + str(new_first_empty_page)
             file_write(file, constants.RECORD_PER_FILE_LENGTH, new_file_header)
 
         empty_page_header = "0 1" + ((constants.PAGE_HEADER_LENGTH - 4) * " ") + "\n"
@@ -143,7 +143,7 @@ def delete_record(type_name, pk):
 def update_record(type_name, pk, fields):
 
     # check given fields
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 
@@ -167,7 +167,7 @@ def update_record(type_name, pk, fields):
 
 def search_record(type_name, pk, output_file=None):
 
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 
@@ -197,7 +197,7 @@ def search_record(type_name, pk, output_file=None):
 
 def list_records(type_name, output_file):
 
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 
@@ -236,7 +236,7 @@ def list_records(type_name, output_file):
 
 def filter_records(type_name, condititon, output_file):
 
-    bp_file = f"BPTree_{type_name}"
+    bp_file = "BPTree_" + str(type_name)
     files = [f for f in os.listdir('.') if os.path.isfile(f)]
     if bp_file not in files: return False
 

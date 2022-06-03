@@ -16,10 +16,10 @@ def operations(input_file, output_file):
 
         with open("horadrimLog.csv", "a") as csv_file:
             result = "success" if result else "failure"
-            csv_file.write(f"{int(time.time())},{line},{result}\n")
+            csv_file.write(str(int(time.time())) + "," + str(line) + "," + str(result) + "\n")
 
     for type in list(BP_TREES):
-        bp_file = f"BPTree_{type}"
+        bp_file = "BPTree_" + str(type)
         clear_bpfile(bp_file)
         BP_TREES[type].print_to_file(file = bp_file)
 

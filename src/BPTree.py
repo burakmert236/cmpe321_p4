@@ -359,22 +359,3 @@ class BPlusTree(object):
         while type(node) is not Leaf:
             node = node.values[0]
         return node
-
-
-def demo():
-    bplustree = BPlusTree(4)
-    random_list = random.sample(range(1, 100), 20)
-    for i in random_list:
-        bplustree.__setitem__(i, f"{i}+")
-
-    # random.shuffle(random_list)
-    # for i in random_list:
-    #     print('Delete ' + str(i))
-    #     bplustree.delete(i)
-    #     bplustree.show()
-
-    bplustree.show()
-
-
-if __name__ == '__main__':
-    demo()
